@@ -39,6 +39,7 @@ int goalFli = 90;
 int timer = 0;
 int ballX;
 float thetaRad, vx, vy, spd1, spd2, spd3;
+int myGoal, eneGoal;
 
 void zeroYaw() {
   Serial1.begin(115200); delay(100);
@@ -129,18 +130,18 @@ void reload() {
   motor(4, 0);
 }
 
-bool getGoal(int goal) {//ฟังก์ชั่นคำนวณว่าโกลอยู่กลางจอหรือไม่
+bool getGoal(int goals) {//ฟังก์ชั่นคำนวณว่าโกลอยู่กลางจอหรือไม่
   if (pixy.updateBlocks())
   {
-    if (goal == 2 && pixy.sigSize[2])
+    if (goals == eneGoal && pixy.sigSize[eneGoal])
     {
-      x = pixy.sigInfo[2][0].x;
-      width = pixy.sigInfo[2][0].width;
+      x = pixy.sigInfo[eneGoal][0].x;
+      width = pixy.sigInfo[eneGoal][0].width;
     }
-    else if (goal == 3 && pixy.sigSize[3])
+    else if (goals == myGoal && pixy.sigSize[myGoal])
     {
-      x = pixy.sigInfo[3][0].x;
-      width = pixy.sigInfo[3][0].width;
+      x = pixy.sigInfo[myGoal][0].x;
+      width = pixy.sigInfo[myGoal][0].width;
     }
 
     else return 0;
@@ -154,14 +155,14 @@ bool getGoal(int goal) {//ฟังก์ชั่นคำนวณว่าโ
     {
       if (x < 162)
       {
-        if ((x + width / 2) > 162)
+        if ((x + width / 2) > 164)
         {
           return 1;
         }
       }
       else
       {
-        if ((x - width / 2) < 162)
+        if ((x - width / 2) < 160)
         {
           return 1;
         }
@@ -201,7 +202,7 @@ void goCatch(int x, int y, int spFli, int fli_Kp)
 
 bool whiteLine()
 {
-  if((analog(1)>1480 || analog(3)>2760 || analog(5)>2755) && !(pixy.sigSize[3] || pixy.sigSize[2]))
+  if((analog(1)>317 || analog(3)>675 || analog(5)> 745) && !(pixy.sigSize[3] || pixy.sigSize[2]))
   {
     return true;
   }
@@ -213,6 +214,24 @@ void setup() {
   oled.text(6, 0, "Press SW_B zeroYaw");
   oled.text(7, 0, "Press SW_A Run...");
   oled.show();
+  while (!SW_A())
+  {//2 yellow
+    //3 blue
+    if(pixy.updateBlocks()&&pixy.sigSize[2])
+    {
+      myGoal=2;
+      eneGoal=3;
+      oled.text(5,0,"My Goal = Yellow");
+      oled.show();
+    }
+    else if(pixy.updateBlocks()&&pixy.sigSize[3])
+    {
+      myGoal=3;
+      eneGoal=2;
+      oled.text(5,0,"My Goal = Blue");
+      oled.show();
+    }
+  }
   while (!SW_OK ()) 
   {
     if (!SW_B ()) {
@@ -229,10 +248,9 @@ void setup() {
 void loop()
 {
   if (whiteLine()){
-    while(pixy.updateBlocks()&&!(pixy.sigSize[2]||pixy.sigSize[3]))
+    while(pixy.updateBlocks()&&!(pixy.sigSize[eneGoal]||pixy.sigSize[myGoal]))
     {
       holonomic(0,0,30);
-      beep();
     }
   }
   else
@@ -264,10 +282,10 @@ void loop()
       }
       else
       {
-        if (abs(ballFli - pixy.sigInfo[1][0].y) > flingErrorGap || abs(pixy.sigInfo[1][0].x - 157) > rotErrorGap) discoveState = true;
+        if (abs(ballFli - pixy.sigInfo[1][0].y) > flingErrorGap || abs(pixy.sigInfo[1][0].x - 162) > rotErrorGap) discoveState = true;
         else
         {
-          if(getGoal(3))
+          if(getGoal(eneGoal))
           {
             ao();
             unsigned long loopTimer = millis();
@@ -280,22 +298,6 @@ void loop()
               if (millis() - loopTimer >= 600){
                 break;
                 }
-               /*
-                if(pixy.updateBlocks() && pixy.sigSize[3] && pixy.sigSize[1])
-                {
-                  goalPosX = pixy.sigInfo[3][0].x;//รับตำแหน่งโกล
-                  goalPosY = pixy.sigInfo[3][0].y;
-                  goalWidth = pixy.sigInfo[3][0].width;
-                  oled.text(5,0,"shoot");
-                  oled.show();
-                              
-                  goCatch(goalPosX, goalPosY, goalFli, fli_Kp2);
-                  if ((abs(rot_error) <= rotErrorGap) && (abs(fli_error) <= flingErrorGap))
-                  {
-                    break;
-                  } 
-                }
-                else break;*/
             }
             shoot();
             holonomic(0,0,0);
@@ -306,7 +308,7 @@ void loop()
             getIMU();
             if (pvYaw < 0)
             {
-              while(!whiteLine() && pixy.updateBlocks() && (abs(ballFli - pixy.sigInfo[1][0].y) <= flingErrorGap) && (abs(pixy.sigInfo[1][0].x - 157) <= rotErrorGap))
+              while(!whiteLine() && pixy.updateBlocks() && (abs(ballFli - pixy.sigInfo[1][0].y) <= flingErrorGap) && (abs(pixy.sigInfo[1][0].x - 162) <= rotErrorGap))
               {
                 ballPosY = pixy.sigInfo[1][0].y;
                 ali_error = ballPosY - ballFli;
@@ -315,10 +317,10 @@ void loop()
                 ali_pError = ali_error;
                 vecCurve = -ali_vec;
                 radCurve = 27;
-                holonomic(48, vecCurve, radCurve);
+                holonomic(50, vecCurve, radCurve);
                 oled.text(5,0,"vecCurve = %d", vecCurve );
                 oled.show();
-                if(getGoal(3))
+                if(getGoal(eneGoal))
                 {
                   break;
                 }
@@ -326,7 +328,7 @@ void loop()
           }
           else
           {
-            while(!whiteLine() && .lopixy.updateBlocks() && (abs(ballFli - pixy.sigInfo[1][0].y) <= flingErrorGap) && (abs(pixy.sigInfo[1][0].x - 157) <= rotErrorGap))
+            while(!whiteLine() && pixy.updateBlocks() && (abs(ballFli - pixy.sigInfo[1][0].y) <= flingErrorGap) && (abs(pixy.sigInfo[1][0].x - 157) <= rotErrorGap))
             {
               ballPosY = pixy.sigInfo[1][0].y;
               ali_error = ballPosY - ballFli;
@@ -335,10 +337,10 @@ void loop()
               ali_pError = ali_error;
               vecCurve = 180 + ali_vec;
               radCurve = -27;
-              holonomic(48, vecCurve, radCurve);
+              holonomic(50, vecCurve, radCurve);
               oled.text(5,0,"vecCurve = %d", vecCurve );
               oled.show();
-              if(getGoal(3))
+              if(getGoal(eneGoal))
                 {
                   break;
                 }
@@ -352,15 +354,15 @@ void loop()
     {
       if(findGoalState)
       {
-        if(pixy.updateBlocks() && pixy.sigSize[2])
+        if(pixy.updateBlocks() && pixy.sigSize[eneGoal])
         {
-          goalNum = 2;
+          goalNum = eneGoal;
           findGoalState = false;  
           goalDiscoveState = true;
         }
-        else if(pixy.updateBlocks() && pixy.sigSize[3])
+        else if(pixy.updateBlocks() && pixy.sigSize[myGoal])
         {
-          goalNum = 3;
+          goalNum = myGoal;
           findGoalState = false;  
           goalDiscoveState = true;
         }
