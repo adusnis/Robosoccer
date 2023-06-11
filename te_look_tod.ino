@@ -113,7 +113,7 @@ void loop()
     if(Mode == 1)
     {
       holonomic(30, 200, -30);
-      delay(130);
+      delay(90);
       ao();
       shoot();
       reload();
@@ -121,7 +121,7 @@ void loop()
     }
     else if(Mode == 2)
     {
-      delay(130);
+      delay(90);
       shoot();
       reload();
       shootState = 0;
@@ -129,7 +129,7 @@ void loop()
     else if(Mode == 3)
     {
       holonomic(30, -20, 30);
-      delay(130);
+      delay(90);
       ao();
       shoot();
       reload();

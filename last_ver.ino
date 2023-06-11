@@ -16,7 +16,7 @@ int ballPosX;
 #define fli_Kp1 2.0
 #define fli_Kp2 2.0
 #define fli_Ki 0.0
-#define fli_Kd 0.5
+#define fli_Kd 1
 #define flingErrorGap 15
 float ballFli = 140;
 float fli_error, fli_pError, fli_i, fli_d, fli_spd;
@@ -35,7 +35,7 @@ int goalNum;
 int goalFli = 90;
 /* >> ball shooting <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 #define limPin PA0
-#define reloadSpd 60
+#define reloadSpd 70
 int timer = 0;
 int ballX;
 float thetaRad, vx, vy, spd1, spd2, spd3;
@@ -115,7 +115,7 @@ void reload() {
     timer++;
     if (in(limPin)) break;
     delay(1);
-  }
+  }/*
   if (timer == 2000) { // ถ้าก้านยิ่งติด
     motor(4, -reloadSpd); // เลื่อนก้านยิ่งไปข้างหน้า
     delay(500);     //ก่อน 0.5 วินาที
@@ -126,7 +126,7 @@ void reload() {
       if (in(limPin)) break;
       delay(1);
     }
-  }
+  }*/
   motor(4, 0);
 }
 
@@ -202,7 +202,7 @@ void goCatch(int x, int y, int spFli, int fli_Kp)
 
 bool whiteLine()
 {
-  if((analog(1)>317 || analog(3)>675 || analog(5)> 745) && !(pixy.sigSize[3] || pixy.sigSize[2]))
+  if((analog(1)>330 || analog(3)>460 || analog(5)> 490) && !(pixy.sigSize[3] || pixy.sigSize[2]))
   {
     return true;
   }
@@ -214,22 +214,25 @@ void setup() {
   oled.text(6, 0, "Press SW_B zeroYaw");
   oled.text(7, 0, "Press SW_A Run...");
   oled.show();
-  while (!SW_A())
+  int selectTeamState = 0;
+  while (!selectTeamState)
   {//2 yellow
     //3 blue
-    if(pixy.updateBlocks()&&pixy.sigSize[2])
+    if(SW_A())
     {
       myGoal=2;
       eneGoal=3;
       oled.text(5,0,"My Goal = Yellow");
       oled.show();
+      selectTeamState = 1;
     }
-    else if(pixy.updateBlocks()&&pixy.sigSize[3])
+    else if(SW_B())
     {
       myGoal=3;
       eneGoal=2;
       oled.text(5,0,"My Goal = Blue");
       oled.show();
+      selectTeamState = 1;
     }
   }
   while (!SW_OK ()) 
@@ -247,13 +250,13 @@ void setup() {
 }
 void loop()
 {
-  if (whiteLine()){
+  /*if (whiteLine()){
     while(pixy.updateBlocks()&&!(pixy.sigSize[eneGoal]||pixy.sigSize[myGoal]))
     {
       holonomic(0,0,30);
     }
   }
-  else
+  else*/
   {
     if (pixy.updateBlocks() && pixy.sigSize[1]) //เห็นบอล
     {
@@ -295,13 +298,13 @@ void loop()
               oled.text(5,0,"run to ball");
               oled.show();
              
-              if (millis() - loopTimer >= 600){
+              if (millis() - loopTimer >= 1000){
                 break;
                 }
-            }
+            }/*
             shoot();
             holonomic(0,0,0);
-            reload();
+            reload();*/
             discoveState = true;
           }
           {
